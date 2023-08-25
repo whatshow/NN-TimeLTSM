@@ -102,8 +102,8 @@ class LSTM_AlexGraves(nn.Module):
     forward
     @x: the input [batch, n, xm]: xm is the features we measure for x
     @n: the selected index for time series x
-    @C: memory cell  [batch, ?, 1]: ? in the output feature number (from the last iteration, only missing when n=0)
-    @H: hidden state [batch, ?, 1]: ? in the output feature number (from the last iteration, only missing when n=0)
+    @C: memory cell  [batch, ?, 1]: ? is the output feature number (from the last iteration, only missing when n=0)
+    @H: hidden state [batch, ?, 1]: ? is the output feature number (from the last iteration, only missing when n=0)
     '''
     def forward(self, x, n, *, C = None, H = None):
         # input check
@@ -126,9 +126,9 @@ class LSTM_AlexGraves(nn.Module):
         # fill in the initial C and H if not given
         device_cur = self.og_b.device;
         if C is None:
-            C = torch.zeros(batch_size, self.nn_out_feature_num, 1).to(device_cur);
+            C = torch.zeros(batch_size, self.nn_out_feature_num, 1, dtype=torch.float32).to(device_cur);
         if H is None:
-            H = torch.zeros(batch_size, self.nn_out_feature_num, 1).to(device_cur);
+            H = torch.zeros(batch_size, self.nn_out_feature_num, 1, dtype=torch.float32).to(device_cur);
         
         # forget gate
         fg = self.fg_func(self.fg_w_c*C + torch.matmul(self.fg_w_h, H) + torch.matmul(self.fg_w_x, x_cur) + self.fg_b);

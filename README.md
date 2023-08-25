@@ -6,3 +6,4 @@
 
 ### Others
 * [why use `loss.backward(retain_graph=True)`](https://stackoverflow.com/questions/46774641/what-does-the-parameter-retain-graph-mean-in-the-variables-backward-method)
+* [How to write your own LSTM](https://blog.csdn.net/junbaba_/article/details/106135219)

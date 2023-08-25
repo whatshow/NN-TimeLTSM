@@ -62,7 +62,15 @@ class TimeLSTMLayer(nn.Module):
         self.hidden_neurons_C = [];                 # to hold hidden neurons cell memory
         self.hidden_neurons_CN = [];                # to hold hidden neurons cell memory node (only used for this NN node)    
         self.hidden_neurons_H = [];                 # to hold hidden neurons hidden states
-        for hns_id in range(0, hidden_neuron_size):
+    
+    '''
+    clean the historical hidden states and cell memory 
+    '''
+    def clean_history_hidden_states_and_cell_memory(self):
+        self.hidden_neurons_C.clear();
+        self.hidden_neurons_CN.clear();
+        self.hidden_neurons_H.clear();
+        for nn_id in range(0, self.hidden_neuron_size):
             self.hidden_neurons_C.append(None);
             self.hidden_neurons_CN.append(None);
             self.hidden_neurons_H.append(None);
@@ -78,6 +86,8 @@ class TimeLSTMLayer(nn.Module):
     [batch, hidden_neuron_size, ?]: ? is the output feature number
     '''
     def forward(self, x, n, *, t = None):
+        # clean the histor
+        self.clean_history_hidden_states_and_cell_memory();
         # go through all data
         for n_id in range(n):
             # go through the all neurons to update the hidden state
