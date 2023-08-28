@@ -34,9 +34,11 @@ class TimeLSTM_v1(nn.Module):
     build the parameters
     @nn_init_func:                  the function to init nn parameters 
     @nn_in_feature_num:             input feature number
-    nn_out_feature_num:             output feature number
+    @nn_out_feature_num:            output feature number
+    @nn_type:                       
+    @nn_time_feature_num:           input feature number (time)
     '''
-    def build(self, nn_init_func, nn_in_feature_num, nn_out_feature_num):
+    def build(self, nn_init_func, nn_in_feature_num, nn_out_feature_num, *, nn_type=NN_TYPE_LSTM_ALEX_GRAVES, nn_time_feature_num=1):
         # input check
         if nn_init_func not in [torch.zeros, torch.ones, torch.randn]:
             raise Exception(ERR_BUILD_NN_INIT_FUNCTION_WRONG_TYPE);
@@ -76,9 +78,26 @@ class TimeLSTM_v1(nn.Module):
         self.og_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
         self.og_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
         self.og_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        self.og_func = nn.Sigmoid();
+        self.og_func = torch.sigmoid;
         # hidden state (output)
         self.ho_func = torch.tanh;
+        
+        # remove the forget gate
+        # output gate
+        self.og_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        # time gate 1
+        self.tg1_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
+        self.tg1_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, nn_time_feature_num));
+        self.tg1_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        self.tg1_func_t = torch.tanh;
+        self.tg1_func = torch.sigmoid;
+        # time gate 2
+        self.tg2_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
+        self.tg2_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, nn_time_feature_num));
+        self.tg2_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        self.tg2_func_t = torch.tanh;
+        self.tg2_func = torch.sigmoid;
+        
     
     '''
     init
@@ -106,6 +125,8 @@ class TimeLSTM_v1(nn.Module):
         
         # build
         self.build(nn_init_func, nn_in_feature_num, nn_out_feature_num);
+        
+        # average the weight
         stdv = 1.0/math.sqrt(nn_out_feature_num);
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv);

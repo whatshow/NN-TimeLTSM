@@ -99,7 +99,7 @@ RNN_LSTMAGV6_pred = np.squeeze(rnn_lstm_ag_6_pred.numpy());
 
 
 # plot
-plt.figure(figsize=(15, 6), dpi=100)
+plt.figure(figsize=(15, 6), dpi=200)
 legend_labels = [];
 plt.plot(range(len(data_test_y_plot)), data_test_y_plot);
 legend_labels.append('Actual');
@@ -132,3 +132,8 @@ plt.xlabel('Time');
 plt.ylabel('Normalised Rx Signal Power')
 plt.title('Validation Report');
 plt.show();
+
+print("Loss-SimpleRNN: %.4f"%(sum(RNN_TF_SimpleRNN_pred - data_test_y_plot)));
+print("Loss-Torch.LSTM: %.4f"%(sum(RNN_LSTM_v1_epo100_pred - data_test_y_plot)));
+print("Loss-My.LSTM: %.4f"%(sum(RNN_LSTM_v1_epo100_pred - data_test_y_plot)));
+print("Loss-AG.LSTM: %.4f"%(sum(RNN_LSTMAGV6_pred - data_test_y_plot)));
