@@ -56,6 +56,10 @@ filename_human = np.asarray(filename_human);
 filename_vehicle = np.asarray(filename_vehicle);
 filename_uav = np.asarray(filename_uav);
 
+# build the data holder for each station
+stalist_rssilist = [];
+
+
 # load data
 # select 3 files to test for huanm, vehicle and uav respectively. The rest are for training and valid
 test_file_id_human = np.random.choice(len(filename_human), 1);
@@ -74,7 +78,8 @@ train_filename = np.concatenate((train_filename_human, train_filename_vehicle, t
 for filename in train_filename:
     for seed in seeds:
         for staid in staids:
-            data_frame = pandas.read_csv("data/" + filename + "/log/seed_000000000" + str(seed) + "/mac_rec/0000000000" + str(staid)  + ".csv", header=None);
+            file_path_cur = "../../../NN-TimeLTSM-Data/" + filename + "/log/seed_000000000" + str(seed) + "/mac_rec/0000000000" + str(staid)  + ".csv"
+            data_frame = pandas.read_csv(file_path_cur, header=None);
             data = data_frame.values;
 
 

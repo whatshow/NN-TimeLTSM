@@ -55,28 +55,6 @@ class TimeLSTM_v1(nn.Module):
         # bias:                     [gate name]_b
         # nolinearity function:     [gate name]_func
         # forget gate
-        # self.fg_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
-        # self.fg_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        # self.fg_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        # self.fg_func = torch.sigmoid;
-        # # input gate
-        # self.ig_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
-        # self.ig_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        # self.ig_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        # self.ig_func = torch.sigmoid;
-        # # input node
-        # self.in_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
-        # self.in_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        # self.in_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        # self.in_func = torch.tanh;
-        # # output gate
-        # self.og_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
-        # self.og_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        # self.og_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        # self.og_func = torch.sigmoid;
-        # # hidden state (output)
-        # self.ho_func = torch.tanh;
-        
         self.fg_w_h = nn.Parameter(torch.Tensor(nn_out_feature_num, nn_out_feature_num));
         self.fg_w_x = nn.Parameter(torch.Tensor(nn_in_feature_num, nn_out_feature_num));
         self.fg_b = nn.Parameter(torch.Tensor(nn_out_feature_num));
@@ -92,14 +70,11 @@ class TimeLSTM_v1(nn.Module):
         self.og_w_h = nn.Parameter(torch.Tensor(nn_out_feature_num, nn_out_feature_num));
         self.og_w_x = nn.Parameter(torch.Tensor(nn_in_feature_num, nn_out_feature_num));
         self.og_b = nn.Parameter(torch.Tensor(nn_out_feature_num));
+        
+        # 
         stdv = 1.0/math.sqrt(nn_out_feature_num);
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv);
-
-        
-        # self.wh = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num*4));
-        # self.wx = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num*4));
-        # self.b = nn.Parameter(nn_init_func(nn_out_feature_num, 1*4));
     
     '''
     init
