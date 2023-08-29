@@ -6,12 +6,16 @@
 
 ### hidden states -> predicted RSSI
 * 1st solution is to use a DNN to exact the predicted RSSI for the next available beacon interval
-* 2nd solution is to use a DNN or directly generate required <br>
-    Hidden states features
+    Hidden states features at `n` features
     ```
-    rssi,
+    unknown_feature
+    ...
+    unknown_feature
+    rssi_last,
     left_available_time,
     ```
+    We make another `time hidden states` at `n` features. It is created by another DNN from `the difference between the estimated time period and the last available time point (two difference)`.
+* 2nd solution is to take `the difference between the estimated time period and the last available time point (two difference)`, 
 
 ### Others
 * [why use `loss.backward(retain_graph=True)`](https://stackoverflow.com/questions/46774641/what-does-the-parameter-retain-graph-mean-in-the-variables-backward-method)
