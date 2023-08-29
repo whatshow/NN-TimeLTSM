@@ -57,7 +57,9 @@ filename_vehicle = np.asarray(filename_vehicle);
 filename_uav = np.asarray(filename_uav);
 
 # build the data holder for each station
-stalist_rssilist = [[]*];
+time_step = 12;
+stanum = len(staids);
+stalist_rssilist = np.asarray([[[0.0, 0.0]]*12]*124);
 
 
 # load data
