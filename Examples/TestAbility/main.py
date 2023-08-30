@@ -21,7 +21,7 @@ nn_predict_max_time = 8;                                                # maxima
 nn_predict_max_beacon_interval = nn_predict_max_time/beacon_interval;   # maximal nn prediction beacon interval num
 
 
-dl = DataLoaderNS3();
+dl = DataLoaderNS3(debug=True);
 dl(12);
 
 # build the data holder for each station

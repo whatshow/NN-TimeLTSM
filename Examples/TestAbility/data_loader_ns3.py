@@ -3,18 +3,32 @@ import pandas
 
 
 class DataLoaderNS3:
+    # `last known time` + `pred_periods`
+    # [batch_size, target_len, (rssi, time)]
+    TAR_TYPE_PERIOD = 1;
+    # `last beacon` + `pred_periods//beacon_interval`
+    # [batch_size, pred_beacon_num, (average rssi, beacon_start, beacon_end)]
+    TAR_TYPE_BEACONS = 2;
+    # `last beacon` + `next available beacon` in `last beacon` + `pred_periods`
+    # [batch_size, average rssi]
+    TAR_TYPE_NEXT_BEACON = 3;
+    
     '''
     @hold_time_min:             the minimal holdtime (minimum has a higher priority than maximum)
     @hold_time_max:             the maximal holdtime
     @is_human:                  we consider humans
     @is_vehicle:                we consider vehicle
     @is_uav:                    we consider uav
+    @debug:                     whether we debug
     '''
-    def __init__(self, *, hold_time_min=1, hold_time_max=5, is_human=True, is_vehicle=True, is_uav=True):
+    def __init__(self, *, hold_time_min=1, hold_time_max=5, is_human=True, is_vehicle=True, is_uav=True, debug=False):
         # beacon interval
         self.beacon_interval = 0.5;
+        self.next_beacon_interval_from_this_beacon_start = 4*self.beacon_interval;
         # config - seeds (used in the file system)
         self.seeds = np.asarray([5, 6, 7]);
+        if debug:
+            self.seeds = np.asarray([5]);
         self.seeds_len = len(self.seeds);
         # config - station id (6 + 15 + 16 + 7 + 2 + 14 + 2 + 14 + 10 + 19 + 19)
         self.staids = ["0a", "0b", "0c", "0d", "0e", "0f",
@@ -32,7 +46,8 @@ class DataLoaderNS3:
                   "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
                   "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
                   "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99"];
-        self.staids = self.staids[0:1];
+        if debug:
+            self.staids = self.staids[0:1];
         self.staids_len = len(self.staids);
         # config - filenames for human, vehicle, uav
         filename_human = ["NNData_STA128_C00_rec_human_1",
@@ -68,7 +83,13 @@ class DataLoaderNS3:
         self.hold_time_min = hold_time_min;
         self.hold_time_max = hold_time_max;
         # get train, test files
-        self.get_train_test_files(hold_time_min, hold_time_max, is_human, is_vehicle, is_uav);
+        if debug:
+            self.train_filenames = ["NNData_STA128_C00_rec_human_1"];
+            self.train_files_len = 1;
+            self.test_filenames = ["NNData_STA128_C00_rec_vehicle_2"];
+            self.test_files_len = 1;
+        else:
+            self.get_train_test_files(hold_time_min, hold_time_max, is_human, is_vehicle, is_uav);
         # reset the condition
         self.reset();
         
@@ -89,7 +110,7 @@ class DataLoaderNS3:
         filename_vehicle = self.filename_vehicle[hold_time_idx];
         filename_uav = self.filename_uav[hold_time_idx];
         # now we select each file from 3 vessels to test
-        test_file_id_human = np.random.choice(len(filename_human), 1);
+        test_file_id_human = np.random.choice(len(filename_human), 1);       
         test_file_id_vehicle = np.random.choice(len(filename_vehicle), 1);
         test_file_id_uav = np.random.choice(len(filename_uav), 1);
         # separate train files and test files
@@ -123,7 +144,7 @@ class DataLoaderNS3:
         self.test_files_len = len(test_filenames);
     
     '''
-    reset our condition to the initial
+    reset our condition to the initial (while an epoch starts)
     '''
     def reset(self):
         # whether we have load all data
@@ -132,14 +153,136 @@ class DataLoaderNS3:
         self.filename_cur_id = 0;
         self.seed_cur_id = 0;
         self.file_data = None;
+        
+    
+    '''
+    get the last index from a given end time
+    <INPUT>
+    @tar_type:                  the type of the target                 
+    @pred_periods:              the maximal prediction periods(from the last known point)
+    @memory_len:                the memory length
+    @start_time:                the start time
+    @column_end_time:           the end time of a packet
+    @column_rssi:               the rssi
+    <OUTPUT>
+    DataLoaderNS3.TAR_TYPE_PERIOD gives unequal length target
+    output shape is 
+    DataLoaderNS3.TAR_TYPE_PERIOD:                  [target_len, (rssi, time)]
+    DataLoaderNS3.TAR_TYPE_BEACONS:                 [pred_beacon_num, (average rssi, beacon_start, beacon_end)]
+    DataLoaderNS3.TAR_TYPE_NEXT_BEACON:             [average rssi]
+    '''
+    def get_memory_data(self, tar_type, pred_periods, memory_len, start_time, column_end_time, column_rssi):
+        # parameters settings
+        data_len = len(column_rssi);
+        idx_tar = None;                         # target  index
+        cur_start_time = start_time;            # feature start time
+        # we set return values
+        is_filled = False;                      # whether we have enough data
+        next_start_time = -1;                   # next beacon start time we should look at
+        features = np.zeros((memory_len, 2));   # the meory data [memory_len, (rssi, time)] 
+        target = None;                          # the target data
+        
+        # load data, every time we load a beacon data
+        while True:
+            cur_end_time = cur_start_time + self.beacon_interval;
+            cur_data_idx = np.where((column_end_time > cur_start_time) & (column_end_time < cur_end_time));
+            
+            
+        #     # features (measure by `cur_start_time` and `idx`)
+        #     # features - we find the 1st non-zero data from the start time
+        #     end_time_train = cur_start_time + self.beacon_interval;
+        #     # features - not enough features
+        #     if end_time_train not in column_start_time:
+        #         break;                                                          # ------------ end point: not enough data to fill features
+        #     # features - load 1st beacon data into the feature
+        #     while column_end_time[idx] == 0 and column_start_time[idx] <= end_time_train:
+        #         assert(column_rssi[idx] != 0);
+        #         # end time exists, it is a packet
+        #         if column_end_time[idx] != 0: 
+        #             feature_tmp = [column_rssi[idx], column_end_time[idx]];
+        #             features = np.vstack((features, feature_tmp));              # push to the end
+        #             #np.insert(features, len(features), feature_tmp, axis=0);   # push to the end (another solution)
+        #             features = np.delete(features, 0, axis=0);                  # pop the front data
+        #         # move to the next time point
+        #         idx = idx + 1;  
+        #     # take 1 step back to align with the beacon end 
+        #     idx = idx - 1;
+        #     # features - we haven't loaded enough data, so we have to move to the next beacon
+        #     if np.any(features == 0):
+        #         cur_start_time = column_start_time[idx];
+        #         assert(column_end_time[idx] == 0);
+        #         continue;                                                       # ------------ new round: features not full
+        #     # enough data
+        #     next_start_idx = idx;                                               # next time we start from this index
+        #     next_start_time = column_start_time[idx];                           # next time we start from this beacon time
+        #     idx_tar = idx;                                                      # target index starts from the end 
+        #     assert(next_start_time % self.beacon_interval == 0);
+        #     # we try to load the target
+        #     last_beacon_end_time = column_start_time[idx];
+        #     last_data_time = column_start_time[idx-1];
+        #     end_time_target = None;
+            
+            # target
+            # target - `last known time` + `pred_periods`
+            # target - [batch_size, target_len, (rssi, time)]
+            # target - [target_len, (rssi, time)]
+            # if tar_type == DataLoaderNS3.TAR_TYPE_PERIOD:
+            #     # set parameters
+            #     end_time_target = last_data_time + pred_periods;
+            #     target = [];
+            #     # find the target
+            #     while column_end_time[idx_tar] == 0 and column_start_time[idx_tar] <= end_time_target and idx_tar < data_len:
+            #         # end time exists, it is a packet
+            #         if column_end_time[idx_tar] != 0: 
+            #             # add into the target
+            #             target.append([column_rssi[idx_tar], column_end_time[idx_tar]]);
+            #             # move to the next time point
+            #             idx_tar = idx_tar + 1;
+            #     # take 1 step back to align with the actual data end 
+            #     idx_tar = idx_tar - 1;
+            #     # to numpy
+            #     target = np.asarray(target);
+                
+            # target - `last beacon` + `pred_periods//beacon_interval`
+            # target - [batch_size, pred_beacon_num, (average rssi, beacon_start, beacon_end)]
+            # target - [pred_beacon_num, (average rssi, beacon_start, beacon_end)]
+            # if tar_type == DataLoaderNS3.TAR_TYPE_BEACONS:
+            #     # set parameters
+            #     target_len = int(pred_periods//self.beacon_interval);           # this is just the maximal, we may not be able to fill beacuse our `pred_periods` is out of the data scope
+            #     end_time_target = last_beacon_end_time + target_len*self.beacon_interval;
+            #     target = np.zeros((target_len, 3));
+            #     target_beacon_start = np.arange(last_beacon_end_time, last_beacon_end_time, self.beacon_interval);
+                
+            #     while column_end_time[idx_tar] == 0 and column_start_time[idx_tar] <= end_time_target and idx_tar < data_len:
+            #         # if we start at a beacon, we clean everything
+            #         if column_end_time[idx_tar] == 0:
+            #             pass
+                        
+                        
+                
+            # target - `last beacon` + `next available beacon` in `last beacon` + `pred_periods`
+            # target - [batch_size, average rssi]
+            # target - [average rssi]
+            # if tar_type == DataLoaderNS3.TAR_TYPE_NEXT_BEACON:
+            #     # set parameters
+            #     end_time_target = last_beacon_end_time + pred_periods;
+            #     tar_sum = 0;
+            #     tar_num = 0;
+            #     target = np.zeros(2);
+            
+            # if our target is full, we jump
+            # if our target is empty and `end_time_target` not outstripes, we continue
+            # if our target is empty and `end_time_target` outstripes, we jump
+        
+        
+        # return
+        return is_filled, next_start_time, features, target;
     
     '''
     generate data
     @memory_len:                the memory length 
     @pred_periods:              5s by default, the maximal prediction periods(from the last known point)
-    @is_target_period:          [batch_size, (average rssi, end_time)], last known time + `pred_periods`
-    @is_target_beacons:         [batch_size, pred_beacon_num, (average rssi, beacon_start, beacon_end)], last beacon + `pred_periods`
-    @is_target_next_beacon:     [batch_size, average rssi], next beacon average rssi. If not data, we move until there is data
+    @tar_type:                  the type of target
     '''
     def __call__(self, memory_len, *, pred_periods=5):
         pred_beacon_num = int(pred_periods//self.beacon_interval);
@@ -150,6 +293,7 @@ class DataLoaderNS3:
         if self.file_data is None:
             # reset the data
             self.file_data_idx = np.zeros((self.staids_len, 1));
+            self.file_beacon_time = np.zeros((self.staids_len, 1));
             # refill the data
             self.file_data = [];
             for staid in self.staids:
@@ -171,22 +315,29 @@ class DataLoaderNS3:
         for sta_id in range(self.staids_len):
             loaded_memory = 0;
             cur_data = self.file_data[sta_id];
-            cur_data_idx = self.file_data_idx[sta_id];
-            # start_time = data[:, 0];
-            # end_time = data[:, 1];
-            # mac_size = data[:, 2];
-            # phy_size = data[:, 3];
-            # snr_linear = data[:, 4];
-            # rssi_linear = data[:, 5];
-            # mcs = data = data[:, 6];
-            # load the training features
-            while loaded_memory < memory_len:
-                # has end data, we put
-                if cur_data[cur_data_idx, 1] > 0:
-                    features[sta_id];
-                
-                cur_data_idx = cur_data_idx + 1;
-                loaded_memory = loaded_memory + 1;
+            cur_data_beacon_time = self.file_beacon_time[sta_id];
+            
+            # split data into useful tags
+            start_time = cur_data[:, 0];
+            end_time = cur_data[:, 1];
+            #mac_size = cur_data[:, 2];
+            #phy_size = cur_data[:, 3];
+            #snr_linear = cur_data[:, 4];
+            rssi_linear = cur_data[:, 5];
+            #mcs = data = cur_data[:, 6];
+            
+            # 1st we need to calibrate to the start of 
+            
+            
+            
+            is_filled, next_start_time, memory_data, future_data = self.get_memory_data(DataLoaderNS3.TAR_TYPE_PERIOD,
+                                                                                        pred_periods,
+                                                                                        memory_len,
+                                                                                        cur_data_beacon_time,
+                                                                                        end_time,
+                                                                                        rssi_linear);
+            print();
+            
             
             
                 
