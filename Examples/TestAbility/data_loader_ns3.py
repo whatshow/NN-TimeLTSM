@@ -12,6 +12,7 @@ class DataLoaderNS3:
     # `last beacon` + `next available beacon` in `last beacon` + `pred_periods`
     # [batch_size, average rssi]
     TAR_TYPE_NEXT_BEACON = 3;
+    TAR_TYPES = [TAR_TYPE_PERIOD, TAR_TYPE_BEACONS, TAR_TYPE_NEXT_BEACON];
     
     '''
     @hold_time_min:             the minimal holdtime (minimum has a higher priority than maximum)
@@ -159,7 +160,7 @@ class DataLoaderNS3:
     get the last index from a given end time
     <INPUT>
     @tar_type:                  the type of the target                 
-    @pred_periods:              the maximal prediction periods(from the last known point)
+    @pred_period:               the maximal prediction periods(from the last known point)
     @memory_len:                the memory length
     @start_time:                the start time
     @column_end_time:           the end time of a packet
@@ -171,7 +172,10 @@ class DataLoaderNS3:
     DataLoaderNS3.TAR_TYPE_BEACONS:                 [pred_beacon_num, (average rssi, beacon_start, beacon_end)]
     DataLoaderNS3.TAR_TYPE_NEXT_BEACON:             [average rssi]
     '''
-    def get_memory_data(self, tar_type, pred_periods, memory_len, start_time, column_end_time, column_rssi):
+    def get_memory_data(self, tar_type, pred_period, memory_len, start_time, column_end_time, column_rssi):
+        if tar_type not in DataLoaderNS3.TAR_TYPES:
+            raise Exception("The target type is not included in the ");
+        
         # parameters settings
         data_len = len(column_rssi);
         idx_tar = None;                         # target  index
@@ -183,65 +187,46 @@ class DataLoaderNS3:
         target = None;                          # the target data
         
         # load data, every time we load a beacon data
+        # `cur_start_time` tells the start time for each iteration
         while True:
+            # find the end of this beacon period
             cur_end_time = cur_start_time + self.beacon_interval;
-            cur_data_idx = np.where((column_end_time > cur_start_time) & (column_end_time < cur_end_time));
+            #------------ jump point (when the beacon end time overflows)
+            if cur_end_time not in column_end_time:
+                break;
             
-            
-        #     # features (measure by `cur_start_time` and `idx`)
-        #     # features - we find the 1st non-zero data from the start time
-        #     end_time_train = cur_start_time + self.beacon_interval;
-        #     # features - not enough features
-        #     if end_time_train not in column_start_time:
-        #         break;                                                          # ------------ end point: not enough data to fill features
-        #     # features - load 1st beacon data into the feature
-        #     while column_end_time[idx] == 0 and column_start_time[idx] <= end_time_train:
-        #         assert(column_rssi[idx] != 0);
-        #         # end time exists, it is a packet
-        #         if column_end_time[idx] != 0: 
-        #             feature_tmp = [column_rssi[idx], column_end_time[idx]];
-        #             features = np.vstack((features, feature_tmp));              # push to the end
-        #             #np.insert(features, len(features), feature_tmp, axis=0);   # push to the end (another solution)
-        #             features = np.delete(features, 0, axis=0);                  # pop the front data
-        #         # move to the next time point
-        #         idx = idx + 1;  
-        #     # take 1 step back to align with the beacon end 
-        #     idx = idx - 1;
-        #     # features - we haven't loaded enough data, so we have to move to the next beacon
-        #     if np.any(features == 0):
-        #         cur_start_time = column_start_time[idx];
-        #         assert(column_end_time[idx] == 0);
-        #         continue;                                                       # ------------ new round: features not full
-        #     # enough data
-        #     next_start_idx = idx;                                               # next time we start from this index
-        #     next_start_time = column_start_time[idx];                           # next time we start from this beacon time
-        #     idx_tar = idx;                                                      # target index starts from the end 
-        #     assert(next_start_time % self.beacon_interval == 0);
-        #     # we try to load the target
-        #     last_beacon_end_time = column_start_time[idx];
-        #     last_data_time = column_start_time[idx-1];
-        #     end_time_target = None;
-            
+            # find the data packets between this beacon interval
+            features_ids = np.where((column_end_time > cur_start_time) & (column_end_time < cur_end_time));
+            features_ids = features_ids[0]; # only take 1st dimension
+            for feature_id in features_ids:
+                features = np.vstack(features, [column_rssi[feature_id], column_end_time[feature_id]]);
+                features = np.delete(features, 0, axis=0);
+            # we move the start time to the next beacon
+            cur_start_time = cur_end_time;
+            # if we still have 0s in features (in the early stage, we haven't loaded enough data) 
+            if np.any(features == 0):
+                continue;
+            # now we have enough features, we need to the targets
+            cur_pred_end = None;
             # target
             # target - `last known time` + `pred_periods`
             # target - [batch_size, target_len, (rssi, time)]
             # target - [target_len, (rssi, time)]
-            # if tar_type == DataLoaderNS3.TAR_TYPE_PERIOD:
-            #     # set parameters
-            #     end_time_target = last_data_time + pred_periods;
-            #     target = [];
-            #     # find the target
-            #     while column_end_time[idx_tar] == 0 and column_start_time[idx_tar] <= end_time_target and idx_tar < data_len:
-            #         # end time exists, it is a packet
-            #         if column_end_time[idx_tar] != 0: 
-            #             # add into the target
-            #             target.append([column_rssi[idx_tar], column_end_time[idx_tar]]);
-            #             # move to the next time point
-            #             idx_tar = idx_tar + 1;
-            #     # take 1 step back to align with the actual data end 
-            #     idx_tar = idx_tar - 1;
-            #     # to numpy
-            #     target = np.asarray(target);
+            if tar_type == DataLoaderNS3.TAR_TYPE_PERIOD:
+                # set parameters
+                cur_pred_end = cur_end_time + pred_period;
+                # find the targets
+                targets_ids = np.where();
+                    # end time exists, it is a packet
+                    if column_end_time[idx_tar] != 0: 
+                        # add into the target
+                        target.append([column_rssi[idx_tar], column_end_time[idx_tar]]);
+                        # move to the next time point
+                        idx_tar = idx_tar + 1;
+                # take 1 step back to align with the actual data end 
+                idx_tar = idx_tar - 1;
+                # to numpy
+                target = np.asarray(target);
                 
             # target - `last beacon` + `pred_periods//beacon_interval`
             # target - [batch_size, pred_beacon_num, (average rssi, beacon_start, beacon_end)]
