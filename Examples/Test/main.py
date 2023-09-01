@@ -9,6 +9,7 @@ from rnn_lstm_ag_v3 import RNN_LSTMAGV3
 from rnn_lstm_ag_v4 import RNN_LSTMAGV4
 from rnn_lstm_ag_v5 import RNN_LSTMAGV5
 from rnn_lstm_ag_v6 import RNN_LSTMAGV6 
+from rnn_lstm_ag_v7 import RNN_LSTMAGV7
 from rnn_lstm_v1 import RNN_LSTM_v1
 from rnn_lstm_v1_epo100 import RNN_LSTM_v1_epo100
 from rnn_lstm_self_v1_epo100 import RNN_LSTM_self_v1_epo100
@@ -62,6 +63,9 @@ RNN_LSTMAGV5_pred = rnn_lstm_ag_5(folder, device, lstm_layer_neuron_num, lstm_in
 # RNN - LSTM Alex Graves v6 no separate neurons->DNN->Tanh->DNN
 rnn_lstm_ag_6 = RNN_LSTMAGV6();
 rnn_lstm_ag_6_pred = rnn_lstm_ag_6(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, epoch_size, batch_size, learning_rate, data_train_x, data_train_y, data_test_x);
+# RNN - LSTM Alex Graves v7 no separate neurons->DNN->Tanh->DNN
+rnn_lstm_ag_7 = RNN_LSTMAGV7();
+rnn_lstm_ag_7_pred = rnn_lstm_ag_7(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, epoch_size, batch_size, learning_rate, data_train_x, data_train_y, data_test_x);
 
 # torch LSTM
 # RNN - LSTM v1: RNN -> DNN -> tanh -> DNN
@@ -96,7 +100,7 @@ RNN_LSTMAGV3_pred = np.squeeze(RNN_LSTMAGV3_pred.numpy());
 RNN_LSTMAGV4_pred = np.squeeze(RNN_LSTMAGV4_pred.numpy());
 RNN_LSTMAGV5_pred = np.squeeze(RNN_LSTMAGV5_pred.numpy());
 RNN_LSTMAGV6_pred = np.squeeze(rnn_lstm_ag_6_pred.numpy());
-
+RNN_LSTMAGV7_pred = np.squeeze(rnn_lstm_ag_7_pred.numpy());
 
 # plot
 plt.figure(figsize=(15, 6), dpi=200)
@@ -125,6 +129,9 @@ legend_labels.append('LSTM self(100 epo)');
 # legend_labels.append('LSTM Alex Graves v5 (100 epo)');
 plt.plot(range(len(RNN_LSTMAGV6_pred)), RNN_LSTMAGV6_pred);
 legend_labels.append('LSTM Alex Graves v6 (100 epo)');
+plt.plot(range(len(RNN_LSTMAGV7_pred)), RNN_LSTMAGV7_pred);
+legend_labels.append('LSTM Alex Graves v7 (100 epo)');
+
 
 #plt.legend(['Actual', 'SimpleRNN(100 epo)', 'LSTM', 'LSTM(100 epo)', 'LSTM Alex Graves v1', 'LSTM Alex Graves v1(100epo)', 'LSTM Alex Graves v2', 'LSTM Alex Graves v3', 'LSTM Alex Graves v4', 'LSTM Alex Graves v5 (100 epo)', 'LSTM Alex Graves v6 (100 epo)']);
 plt.legend(legend_labels);
@@ -133,7 +140,8 @@ plt.ylabel('Normalised Rx Signal Power')
 plt.title('Validation Report');
 plt.show();
 
-print("Loss-SimpleRNN: %.4f"%(sum(RNN_TF_SimpleRNN_pred - data_test_y_plot)));
-print("Loss-Torch.LSTM: %.4f"%(sum(RNN_LSTM_v1_epo100_pred - data_test_y_plot)));
-print("Loss-My.LSTM: %.4f"%(sum(RNN_LSTM_v1_epo100_pred - data_test_y_plot)));
-print("Loss-AG.LSTM: %.4f"%(sum(RNN_LSTMAGV6_pred - data_test_y_plot)));
+print("Loss-SimpleRNN: %.4f"%(sum((RNN_TF_SimpleRNN_pred - data_test_y_plot)**2)));
+print("Loss-Torch.LSTM: %.4f"%(sum((RNN_LSTM_v1_epo100_pred - data_test_y_plot)**2)));
+print("Loss-My.LSTM: %.4f"%(sum((RNN_LSTM_v1_epo100_pred - data_test_y_plot)**2)));
+print("Loss-AG.LSTM: %.4f"%(sum((RNN_LSTMAGV6_pred - data_test_y_plot)**2)));
+print("Loss-AG.LSTM: %.4f"%(sum((RNN_LSTMAGV7_pred - data_test_y_plot)**2)));

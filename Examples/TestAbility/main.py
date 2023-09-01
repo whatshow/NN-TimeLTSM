@@ -8,7 +8,7 @@ import pandas
 import torch
 from torch import nn
 
-from data_loader_ns3 import DataLoaderNS3
+from data_loader_ns3_stawise import DataLoaderNS3Stawise as DataLoader
 
 # config
 # config - data extra information
@@ -21,8 +21,23 @@ nn_predict_max_time = 8;                                                # maxima
 nn_predict_max_beacon_interval = nn_predict_max_time/beacon_interval;   # maximal nn prediction beacon interval num
 
 
-dl = DataLoaderNS3(debug=True);
-dl(12);
+dl = DataLoader(debug=True);
+is_end = False;
+features = None;
+targets = None;
+last_features = None;
+last_targets = None;
+trials = 0;
+
+while not is_end:
+    is_end, features, targets = dl(12, tar_type=DataLoader.TAR_TYPE_PERIOD, data_uniform_type=DataLoader.DATA_UNIFORM_TYPE_ZERO_PADDING);
+    #is_end, features, targets = dl(12, tar_type=DataLoader.TAR_TYPE_BEACONS);
+    #is_end, features, targets = dl(12, tar_type=DataLoader.TAR_TYPE_NEXT_BEACON);
+    
+    if not is_end:
+        last_features = features;
+        last_targets = targets;
+        trials = trials + 1;
 
 # build the data holder for each station
 # time_step = 12;

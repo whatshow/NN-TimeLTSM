@@ -14,7 +14,7 @@ ERR_FORWARD_X_ILLEGAL = "`x` can have 3 or 4 dimensions, [batch, n, xm] or [batc
 # the neurons are registered as https://pytorch.org/docs/stable/generated/torch.nn.ModuleList.html
 # [batch, n, xm]: xm is the features we measure for x
 # [batch, n, tm]: tm is the features we measure for time, in our case tm=3
-class TimeLSTM_v1(nn.Module):
+class TimeLSTM_v3(nn.Module):
     # constants
     # nn types
     NN_TYPE_LSTM_ALEX_GRAVES = 0;
@@ -61,42 +61,36 @@ class TimeLSTM_v1(nn.Module):
         self.fg_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
         self.fg_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
         self.fg_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        self.fg_func = torch.sigmoid;
         # input gate
         self.ig_w_c = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
         self.ig_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
         self.ig_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
         self.ig_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        self.ig_func = torch.sigmoid;
         # input node
         self.in_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
         self.in_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
         self.in_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        self.in_func = torch.tanh;
         # output gate
         self.og_w_cn = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
         self.og_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
         self.og_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
         self.og_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        self.og_func = torch.sigmoid;
-        # hidden state (output)
-        self.ho_func = torch.tanh;
         
-        # remove the forget gate
+        # remove the forget gate (for time lstm 3)
         # output gate
-        # self.og_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        # # time gate 1
-        # self.tg1_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        # self.tg1_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, nn_time_feature_num));
-        # self.tg1_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        # self.tg1_func_t = torch.tanh;
-        # self.tg1_func = torch.sigmoid;
-        # # time gate 2
-        # self.tg2_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        # self.tg2_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, nn_time_feature_num));
-        # self.tg2_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        # self.tg2_func_t = torch.tanh;
-        # self.tg2_func = torch.sigmoid;
+        self.og_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        # time gate 1
+        self.tg1_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
+        self.tg1_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, nn_time_feature_num));
+        self.tg1_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        self.tg1_func_t = torch.tanh;
+        self.tg1_func = torch.sigmoid;
+        # time gate 2
+        self.tg2_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
+        self.tg2_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, nn_time_feature_num));
+        self.tg2_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        self.tg2_func_t = torch.tanh;
+        self.tg2_func = torch.sigmoid;
         
     
     '''
@@ -106,7 +100,7 @@ class TimeLSTM_v1(nn.Module):
     @nn_out_feature_num:    the output feature number we want
     '''
     def __init__(self, nn_init_func_type, nn_in_feature_num, nn_out_feature_num):
-        super(TimeLSTM_v1, self).__init__();
+        super(TimeLSTM_v3, self).__init__();
         # input check
         if nn_init_func_type not in self.NN_INIT_TYPES:
             raise Exception(ERR_INIT_NN_INIT_FUNC_TYPE_WRONG);
@@ -133,9 +127,23 @@ class TimeLSTM_v1(nn.Module):
         
     '''
     forward
-    @x: the input [batch, n, xm]: xm is the features we measure for x
+    <INSTRUCTION>
+    The time has 3 features (tm<=3) at most
+        1) tm1 is the time point or the time difference
+        2) tm2 is the predict start
+        3) tm3 is the predict end
+    <INPUT>
+    @x: the feature input [batch, n, xm] (xm is the feature number)
+    @t: the time input [batch, n, 1] (the time point)
+    @pred_start: the prediction start [batch, 1] (could be None, then we use the )
+    @pred_end: the prediction end [batch, 1]
+    <OUTPUT>
+    [batch, (rssi_pred, last_time)], `last_time` could be a specific time point or calibrated to an end of a beacon
+    [batch, (rssi_pred)], `rssi_pred` is the for the next available beacon
+    <LOSS CALCULATION>
+    The target could be zero, we have to set `reduction='none'`, manually remove the losses with 0 targets and calculate the mean of the loss
     '''
-    def forward(self, x):
+    def forward(self, x, *, t=None, pred_start=None, pred_end=None):
         # input check
         if not (x.ndim == 3 or x.ndim == 4 and x.shape[-1] != 1):
             raise Exception(ERR_FORWARD_X_ILLEGAL);
@@ -158,17 +166,17 @@ class TimeLSTM_v1(nn.Module):
             x_cur = x[:, memory_id, :, :];
             
             # input gate
-            ig = self.ig_func(self.ig_w_c*cm + torch.matmul(self.ig_w_h, h) + torch.matmul(self.ig_w_x, x_cur) + self.ig_b);
+            ig = torch.sigmoid(self.ig_w_c*cm + self.ig_w_h @ h + self.ig_w_x @ x_cur + self.ig_b);
             # forget gate
-            fg = self.fg_func(self.fg_w_c*cm + torch.matmul(self.fg_w_h, h) + torch.matmul(self.fg_w_x, x_cur) + self.fg_b);
+            fg = torch.sigmoid(self.fg_w_c*cm + self.fg_w_h @ h + self.fg_w_x @ x_cur + self.fg_b);
             # input node
-            inn = self.in_func(torch.matmul(self.in_w_h, h) + torch.matmul(self.in_w_x, x_cur) + self.in_b); 
+            inn = torch.tanh(self.in_w_h @ h + self.in_w_x @ x_cur + self.in_b); 
             # cell memory node
             cm = fg*cm + ig*inn;
             # output gate
-            og = self.og_func(self.og_w_cn*cm + torch.matmul(self.og_w_h, h) + torch.matmul(self.og_w_x, x_cur) + self.og_b);
+            og = torch.sigmoid(self.og_w_cn*cm + self.og_w_h @ h + self.og_w_x @ x_cur + self.og_b);
             # hidden state
-            h = og*self.ho_func(cm);
+            h = og*torch.tanh(cm);
         
         # remove the last dimension for cm and h
         # e.g., they should be [batch, ?]  ? is the output feature number 
