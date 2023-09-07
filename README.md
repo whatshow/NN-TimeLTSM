@@ -5,6 +5,8 @@
 * `LSTM_v1.py` is a self-written LSTM to test our ability and to prove that weight initialisation is important.
 * `TimeLSTM_v1.py` is our replication of `Alex Graves` LSTM
 * `TimeLSTM_v2.py` uses less parameters
+* `TimeLSTM_v3.py` uses 3 types of time gates 
+* `TimeLSTM_v4.py` introduces the prediction end time as an additive output
 
 ### Device Management
 * In our model `nn.Parameter` is kept on the CPU while only computation is performed on the GPU in a differentiable manner. That way, it will automatically accumulate back onto the CPU parameters. See [the explanation by albanD](https://discuss.pytorch.org/t/keeping-only-part-of-model-parameters-on-gpu/71308)

@@ -44,17 +44,9 @@ while not is_end:
 # stanum = len(staids);
 # stalist_rssilist = np.asarray([[[0.0, 0.0]]*12]*124);
 
-
 # load data
 
 # merge train filenames
-
-
-            
-
-
-
-
 
 # ERR_SetDevice2GPU_gpu_idx_WRONG_DIM = "[gpu_idx] can only be a scalar or a vector";
 # ERR_SetDevice2GPU_gpu_idx_OVERFLOW = "[gpu_idx] selects not existing GPU";
