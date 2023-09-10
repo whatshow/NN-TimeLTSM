@@ -10,6 +10,7 @@ ERR_BUILD_NN_OUT_FEATURE_NUM_ILLEGAL = "`nn_out_feature_num` must be a positive 
 ERR_INIT_NN_TYPE_WRONG = "`hidden_neuron_type` is not a recognised type";
 ERR_INIT_NN_INIT_FUNC_TYPE_WRONG = "`nn_init_func_type` is not a recognised type"
 ERR_FORWARD_X_ILLEGAL = "`x` can have 3 or 4 dimensions, [batch, n, xm] or [batch, n, xm, 1]: xm is the features number of x";
+ERR_FORWARD_T_ILLEGAL = "`t` can have 3 or 4 dimensions, [batch, n, 1] or [batch, n, 1, 1]";
 # TimeLSTM takes two inputs
 # the neurons are registered as https://pytorch.org/docs/stable/generated/torch.nn.ModuleList.html
 # [batch, n, xm]: xm is the features we measure for x
@@ -31,7 +32,8 @@ class TimeLSTM_v3(nn.Module):
     
     # the type of this layer
     nn_type = None;
-    
+    # the precision of data
+    precision = torch.float64;
     
     '''
     build the parameters
@@ -142,9 +144,15 @@ class TimeLSTM_v3(nn.Module):
         # input check
         if not (x.ndim == 3 or x.ndim == 4 and x.shape[-1] != 1):
             raise Exception(ERR_FORWARD_X_ILLEGAL);
+        if t is not None:
+            if not (x.ndim == 3 or x.ndim == 4 and x.shape[-1] != 1):
+                raise Exception(ERR_FORWARD_T_ILLEGAL);
         # extend the dimension of x from [batch, n, xm] to [batch, n, xm, 1]
         if x.ndim == 3:
             x = torch.unsqueeze(x, -1);
+        if t is not None:
+            if t.ndim == 3:
+                t = torch.unsqueeze(t, -1);
             
         # get the memory length
         memory_len = x.shape[-3];
@@ -161,6 +169,7 @@ class TimeLSTM_v3(nn.Module):
         # iteratively train data
         for memory_id in range(memory_len):
             x_cur = x[:, memory_id, :, :];
+            t_cur = t[:, memory_id, :, :];
             # input gate
             ig = torch.sigmoid(self.ig_w_c*cm + self.ig_w_h @ h + self.ig_w_x @ x_cur + self.ig_b);
             # forget gate (not TimeLSTM type 3)
@@ -178,35 +187,35 @@ class TimeLSTM_v3(nn.Module):
                 h = og*torch.tanh(cm);
             elif self.nn_type == TimeLSTM_v3.NN_TYPE_LSTM_TIME1:
                 # time gates
-                tm1 = torch.sigmoid(self.tg1_w_x @ x + torch.tanh(self.tg1_w_t @ t) + self.tg1_b);
+                tm1 = torch.sigmoid(self.tg1_w_x @ x_cur + torch.tanh(self.tg1_w_t @ t_cur) + self.tg1_b);
                 # cell memory node
                 cm = fg*cm + ig*tm1*inn;
                 # output gate
-                og = torch.sigmoid(self.og_w_cn*cm + self.og_w_t @ t + self.og_w_h @ h + self.og_w_x @ x_cur + self.og_b);
+                og = torch.sigmoid(self.og_w_cn*cm + self.og_w_t @ t_cur + self.og_w_h @ h + self.og_w_x @ x_cur + self.og_b);
                 # hidden state
                 h = og*torch.tanh(cm);
             elif self.nn_type == TimeLSTM_v3.NN_TYPE_LSTM_TIME2:
                 # time gates
-                tm1 = torch.sigmoid(self.tg1_w_x @ x + torch.tanh(self.tg1_w_t @ t) + self.tg1_b);
-                tm2 = torch.sigmoid(self.tg2_w_x @ x + torch.tanh(self.tg2_w_t @ t) + self.tg2_b);
+                tm1 = torch.sigmoid(self.tg1_w_x @ x_cur + torch.tanh(self.tg1_w_t @ t_cur) + self.tg1_b);
+                tm2 = torch.sigmoid(self.tg2_w_x @ x_cur + torch.tanh(self.tg2_w_t @ t_cur) + self.tg2_b);
                 # cell memory node
                 cm_hat = fg*cm + ig*tm1*inn;
                 cm = fg*cm + ig*tm2*inn;
                 # output gate
-                og = torch.sigmoid(self.og_w_cn*cm_hat + self.og_w_t @ t + self.og_w_h @ h + self.og_w_x @ x_cur + self.og_b);
+                og = torch.sigmoid(self.og_w_cn*cm_hat + self.og_w_t @ t_cur + self.og_w_h @ h + self.og_w_x @ x_cur + self.og_b);
                 # hidden state
                 h = og*torch.tanh(cm_hat);
             elif self.nn_type == TimeLSTM_v3.NN_TYPE_LSTM_TIME3:
                 # time gates
-                tm1 = torch.sigmoid(self.tg1_w_x @ x + torch.tanh(self.tg1_w_t @ t) + self.tg1_b);
-                tm2 = torch.sigmoid(self.tg2_w_x @ x + torch.tanh(self.tg2_w_t @ t) + self.tg2_b);
+                tm1 = torch.sigmoid(self.tg1_w_x @ x_cur + torch.tanh(self.tg1_w_t @ t_cur) + self.tg1_b);
+                tm2 = torch.sigmoid(self.tg2_w_x @ x_cur + torch.tanh(self.tg2_w_t @ t_cur) + self.tg2_b);
                 # cell memory node
                 cm_hat = (1 - ig*tm1)*cm + ig*tm1*inn;
                 cm = (1 - ig*tm2)*cm + ig*tm2*inn;
                 cm_hat = fg*cm + ig*tm1*inn;
                 cm = fg*cm + ig*tm2*inn;
                 # output gate
-                og = torch.sigmoid(self.og_w_cn*cm_hat + self.og_w_t @ t + self.og_w_h @ h + self.og_w_x @ x_cur + self.og_b);
+                og = torch.sigmoid(self.og_w_cn*cm_hat + self.og_w_t @ t_cur + self.og_w_h @ h + self.og_w_x @ x_cur + self.og_b);
                 # hidden state
                 h = og*torch.tanh(cm_hat);
 

@@ -338,7 +338,7 @@ class DataLoaderNS3Stawise:
                 for staid in self.staids:
                     file_path_cur = "../../../NN-TimeLTSM-Data/" + self.train_filenames[self.filename_cur_id] + "/log/seed_000000000" + str(self.seeds[self.seed_cur_id]) + "/ap_rec/" + staid  + ".csv"
                     data_frame_tmp = pandas.read_csv(file_path_cur, header=None);
-                    data_tmp = data_frame_tmp.values;
+                    data_tmp = data_frame_tmp.values.astype('float32');
                     # retrieve the data
                     self.file_data.append(data_tmp);
             # now we have temporary data
