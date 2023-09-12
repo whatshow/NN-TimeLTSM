@@ -63,40 +63,40 @@ class TimeLSTM_v3(nn.Module):
         # forget gate
         # only when not time gate type 3 is chosen
         if self.nn_type != TimeLSTM_v3.NN_TYPE_LSTM_TIME3:
-            self.fg_w_c = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-            self.fg_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
-            self.fg_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-            self.fg_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+            self.fg_w_c = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
+            self.fg_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num)).to(self.precision);
+            self.fg_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num)).to(self.precision);
+            self.fg_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
         # input gate
-        self.ig_w_c = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        self.ig_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
-        self.ig_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        self.ig_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        self.ig_w_c = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
+        self.ig_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num)).to(self.precision);
+        self.ig_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num)).to(self.precision);
+        self.ig_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
         # input node
-        self.in_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
-        self.in_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        self.in_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        self.in_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num)).to(self.precision);
+        self.in_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num)).to(self.precision);
+        self.in_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
         # output gate
-        self.og_w_cn = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-        self.og_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num));
-        self.og_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-        self.og_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+        self.og_w_cn = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
+        self.og_w_h = nn.Parameter(nn_init_func(nn_out_feature_num, nn_out_feature_num)).to(self.precision);
+        self.og_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num)).to(self.precision);
+        self.og_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
         # output gate - time interval weight
         # all 3 time gate types are chosen
         if self.nn_type in [TimeLSTM_v3.NN_TYPE_LSTM_TIME1, TimeLSTM_v3.NN_TYPE_LSTM_TIME2, TimeLSTM_v3.NN_TYPE_LSTM_TIME3]:
-            self.og_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+            self.og_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
         # time gate 1
         # all 3 time gate types are chosen
         if self.nn_type in [TimeLSTM_v3.NN_TYPE_LSTM_TIME1, TimeLSTM_v3.NN_TYPE_LSTM_TIME2, TimeLSTM_v3.NN_TYPE_LSTM_TIME3]:
-            self.tg1_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-            self.tg1_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-            self.tg1_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+            self.tg1_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num)).to(self.precision);
+            self.tg1_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
+            self.tg1_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
         # time gate 2
         # all time gate type 2, 3 are chosen
         if self.nn_type in [TimeLSTM_v3.NN_TYPE_LSTM_TIME2, TimeLSTM_v3.NN_TYPE_LSTM_TIME3]:
-            self.tg2_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num));
-            self.tg2_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
-            self.tg2_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1));
+            self.tg2_w_x = nn.Parameter(nn_init_func(nn_out_feature_num, nn_in_feature_num)).to(self.precision);
+            self.tg2_w_t = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
+            self.tg2_b = nn.Parameter(nn_init_func(nn_out_feature_num, 1)).to(self.precision);
     
     '''
     init
@@ -105,7 +105,7 @@ class TimeLSTM_v3(nn.Module):
     @nn_out_feature_num:    the output feature number we want
     @nn_type:               the tpye of the neural network
     '''
-    def __init__(self, nn_init_func_type, nn_in_feature_num, nn_out_feature_num, *, nn_type=NN_TYPE_LSTM_ALEX_GRAVES):
+    def __init__(self, nn_init_func_type, nn_in_feature_num, nn_out_feature_num, *, nn_type=NN_TYPE_LSTM_ALEX_GRAVES, precision=torch.float64):
         super(TimeLSTM_v3, self).__init__();
         # input check
         if nn_init_func_type not in self.NN_INIT_TYPES:
@@ -124,6 +124,8 @@ class TimeLSTM_v3(nn.Module):
         self.nn_out_feature_num = nn_out_feature_num;
         # record the type
         self.nn_type = nn_type;
+        # record the presion
+        self.precision = precision;
         
         # build
         self.build(nn_init_func, nn_in_feature_num, nn_out_feature_num);
@@ -162,14 +164,15 @@ class TimeLSTM_v3(nn.Module):
         device_cur = self.og_b.device;
         # fill in the initial C
         if cm is None:
-            cm = torch.zeros(batch_size, self.nn_out_feature_num, 1, dtype=torch.float32).to(device_cur);
+            cm = torch.zeros(batch_size, self.nn_out_feature_num, 1, dtype=torch.float32).to(self.precision).to(device_cur);
         # the 1st input always has not hidden states
-        h = torch.zeros(batch_size, self.nn_out_feature_num, 1, dtype=torch.float32).to(device_cur);
+        h = torch.zeros(batch_size, self.nn_out_feature_num, 1, dtype=torch.float32).to(self.precision).to(device_cur);
         
         # iteratively train data
         for memory_id in range(memory_len):
             x_cur = x[:, memory_id, :, :];
-            t_cur = t[:, memory_id, :, :];
+            if t is not None:
+                t_cur = t[:, memory_id, :, :];
             # input gate
             ig = torch.sigmoid(self.ig_w_c*cm + self.ig_w_h @ h + self.ig_w_x @ x_cur + self.ig_b);
             # forget gate (not TimeLSTM type 3)
