@@ -27,8 +27,13 @@ class ZScoreScaler:
     
     
     def transform(self, data):
-        pass
-    
+        data_len = len(data);
+        for data_id in range(data_len):
+            data[data_id] = (data[data_id] - self.mean)/self.st_deviation;
+        return data;
     
     def inverse_transform(self, data):
-        pass
+        data_len = len(data);
+        for data_id in range(data_len):
+            data[data_id] = data[data_id]*self.st_deviation + self.mean;
+        return data;

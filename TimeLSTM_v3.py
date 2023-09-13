@@ -226,6 +226,6 @@ class TimeLSTM_v3(nn.Module):
         # e.g., they should be [batch, ?]  ? is the output feature number 
         h = torch.squeeze(h, -1);
         # cm is [batch, ?, 1] as the long memory staying inside this cell
-        
+    
         # return
         return h, cm;
