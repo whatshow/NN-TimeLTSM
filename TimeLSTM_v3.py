@@ -215,8 +215,6 @@ class TimeLSTM_v3(nn.Module):
                 # cell memory node
                 cm_hat = (1 - ig*tm1)*cm + ig*tm1*inn;
                 cm = (1 - ig*tm2)*cm + ig*tm2*inn;
-                cm_hat = fg*cm + ig*tm1*inn;
-                cm = fg*cm + ig*tm2*inn;
                 # output gate
                 og = torch.sigmoid(self.og_w_cn*cm_hat + self.og_w_t @ t_cur + self.og_w_h @ h + self.og_w_x @ x_cur + self.og_b);
                 # hidden state

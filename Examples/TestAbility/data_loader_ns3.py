@@ -14,16 +14,16 @@ class DataLoaderNS3:
     FILE_COL_RSSI = 5;              # linear RSSI
     FILE_COL_MCS = 6;               # the predicted MCS for this transmission from the previous beacon
     
-    def __init__(self):
+    def __init__(self, *, data_type=3):
         # beacon interval
         self.beacon_interval = 0.5;
         self.next_beacon_interval_from_this_beacon_start = 3*self.beacon_interval;
         # config - seeds (used in the file system)
-        # self.staids = np.concatenate([[str(item).rjust(5, '0') for item in np.arange(1, 32)],
-        #                         [str(item).rjust(5, '0') for item in np.arange(65, 96)],
-        #                         [str(item).rjust(5, '0') for item in np.arange(129, 160)],
-        #                         [str(item).rjust(5, '0') for item in np.arange(193, 224)]], axis=-1);
-        self.staids = np.array(['00001', '00002']);
+        self.staids = np.concatenate([[str(item).rjust(5, '0') for item in np.arange(1, 32)],
+                                [str(item).rjust(5, '0') for item in np.arange(65, 96)],
+                                [str(item).rjust(5, '0') for item in np.arange(129, 160)],
+                                [str(item).rjust(5, '0') for item in np.arange(193, 224)]], axis=-1);
+        #self.staids = np.array(['00001', '00002']);
         # config - filenames for human, vehicle, uav
         filename_human = ["NNData_STA128_C00_rec_human_3",
                           "NNData_STA128_C00_rec_human_4",
@@ -35,10 +35,17 @@ class DataLoaderNS3:
         filename_uav = ["NNData_STA128_C00_rec_uav_3",
                         "NNData_STA128_C00_rec_uav_4",
                         "NNData_STA128_C00_rec_uav_5"];
-        # seeds = np.arange(1, 10);
-        seeds = np.arange(1, 3);
+        seeds = np.arange(1, 10);
+        #seeds = np.arange(1, 3);
         # config - holding time
-        self.get_train_test_files(filename_human, filename_vehicle, filename_uav, seeds);
+        if data_type == 3:
+            self.get_train_test_files(filename_human, filename_vehicle, filename_uav, seeds);
+        if data_type == 0:
+            self.get_train_test_files(filename_human, None, None, seeds);
+        if data_type == 1:
+            self.get_train_test_files(None, filename_vehicle, None, seeds);
+        if data_type == 2:
+            self.get_train_test_files(None, None, filename_uav, seeds);
         
     '''
     get the train and test files
@@ -61,26 +68,41 @@ class DataLoaderNS3:
                 for seed in seeds:
                     folderpaths_uav.append("../../../NN-TimeLTSM-Data/" + foldername + "/log/seed_000000000" + str(seed) + "/ap_rec/");
         # select one to test
-        test_file_id_human = int(np.random.choice(len(folderpaths_human), 1));
-        test_file_id_vehicle = int(np.random.choice(len(folderpaths_vehicle), 1)); 
-        test_file_id_uav = int(np.random.choice(len(folderpaths_uav), 1)); 
+        if filename_human is not None:
+            test_file_id_human = int(np.random.choice(len(folderpaths_human), 1));
+        if filename_vehicle is not None:
+            test_file_id_vehicle = int(np.random.choice(len(folderpaths_vehicle), 1)); 
+        if filename_uav is not None:
+            test_file_id_uav = int(np.random.choice(len(folderpaths_uav), 1)); 
         # separate - test files
-        test_filename_human = folderpaths_human[test_file_id_human];
-        test_filename_vehicle = folderpaths_vehicle[test_file_id_vehicle];
-        test_filename_uav = folderpaths_uav[test_file_id_uav];
+        if filename_human is not None:
+            test_filename_human = folderpaths_human[test_file_id_human];
+        if filename_vehicle is not None:
+            test_filename_vehicle = folderpaths_vehicle[test_file_id_vehicle];
+        if filename_uav is not None:
+            test_filename_uav = folderpaths_uav[test_file_id_uav];
         # separate - train files
-        train_filename_human = np.delete(folderpaths_human, test_file_id_human);
-        train_filename_vehicle = np.delete(folderpaths_vehicle, test_file_id_vehicle);
-        train_filename_uav = np.delete(folderpaths_uav, test_file_id_uav);
+        if filename_human is not None:
+            train_filename_human = np.delete(folderpaths_human, test_file_id_human);
+        if filename_vehicle is not None:
+            train_filename_vehicle = np.delete(folderpaths_vehicle, test_file_id_vehicle);
+        if filename_uav is not None:
+            train_filename_uav = np.delete(folderpaths_uav, test_file_id_uav);
         # we build a bigger train & test filename
         train_filenames = [];
-        train_filenames.append(train_filename_human);
-        train_filenames.append(train_filename_vehicle);
-        train_filenames.append(train_filename_uav);
+        if filename_human is not None:
+            train_filenames.append(train_filename_human);
+        if filename_vehicle is not None:
+            train_filenames.append(train_filename_vehicle);
+        if filename_uav is not None:
+            train_filenames.append(train_filename_uav);
         test_filenames = [];
-        test_filenames.append(test_filename_human);
-        test_filenames.append(test_filename_vehicle);
-        test_filenames.append(test_filename_uav);
+        if filename_human is not None:
+            test_filenames.append(test_filename_human);
+        if filename_vehicle is not None:
+            test_filenames.append(test_filename_vehicle);
+        if filename_uav is not None:
+            test_filenames.append(test_filename_uav);
         # to numpy array
         train_filenames = np.asarray(train_filenames);
         test_filenames = np.asarray(test_filenames);

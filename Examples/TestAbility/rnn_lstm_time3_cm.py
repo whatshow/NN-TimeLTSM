@@ -13,7 +13,7 @@ class RNN_LSTM_TIME3_CM:
     
     eps                     = 1e-8;             # minimal loss
     patience                = 30;                # stop when loss stops decrease than 5 epo
-    folder = "rnn_lstm_time1_cm/"
+    folder = "rnn_lstm_time3_cm/"
     modelfile_lstm_ag      = "lstm.pkl";
     modelfile_dnn1         = "dnn1.pkl";
     modelfile_dnn2         = "dnn2.pkl";
