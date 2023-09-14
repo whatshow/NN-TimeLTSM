@@ -140,6 +140,7 @@ class RNN_LSTM_TIME2_CM:
                     dnn1_out = model_dnn1_act(model_dnn1(dnn_in));
                     dnn2_out = model_dnn2(dnn1_out);
                     # attach batched data into beacon
+                    dnn2_out = dnn2_out.to('cpu');
                     data_test_y_beacon.append(dnn2_out.numpy());
                     # detach pred_cm
                     pred_cm = pred_cm.detach();

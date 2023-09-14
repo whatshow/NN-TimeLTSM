@@ -20,14 +20,14 @@ from rnn_lstm_time3_cm import RNN_LSTM_TIME3_CM
 
 # config
 # config - nn
-epoch_iter = 300;               # we train 300 times at most 
+epoch_iter = 1;               # we train 300 times at most 
 time_step = 12;
 lstm_layer_neuron_num = 128;
 lstm_in_feature_num = 1;
 learning_rate = 0.005;
 
 # USE GPU if available
-device = torch.device('cpu');
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # the folder
 folder = "./_build/";
 path_folder ="./_dist/";

@@ -23,7 +23,7 @@ class DataLoaderNS3:
                                 [str(item).rjust(5, '0') for item in np.arange(65, 96)],
                                 [str(item).rjust(5, '0') for item in np.arange(129, 160)],
                                 [str(item).rjust(5, '0') for item in np.arange(193, 224)]], axis=-1);
-        #self.staids = np.array(['00001', '00002']);
+        # self.staids = np.array(['00001', '00002']);
         # config - filenames for human, vehicle, uav
         filename_human = ["NNData_STA128_C00_rec_human_3",
                           "NNData_STA128_C00_rec_human_4",
@@ -36,7 +36,7 @@ class DataLoaderNS3:
                         "NNData_STA128_C00_rec_uav_4",
                         "NNData_STA128_C00_rec_uav_5"];
         seeds = np.arange(1, 10);
-        #seeds = np.arange(1, 3);
+        # seeds = np.arange(1, 3);
         # config - holding time
         if data_type == 3:
             self.get_train_test_files(filename_human, filename_vehicle, filename_uav, seeds);

@@ -136,6 +136,7 @@ class RNN_LSTM_AG:
                     dnn1_out = model_dnn1_act(model_dnn1(dnn_in));
                     dnn2_out = model_dnn2(dnn1_out);
                     # attach batched data into beacon
+                    dnn2_out = dnn2_out.to('cpu');
                     data_test_y_beacon.append(dnn2_out.numpy());
                 # to numpy
                 data_test_y_beacon = np.asarray(data_test_y_beacon);
