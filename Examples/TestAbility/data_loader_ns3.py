@@ -14,7 +14,7 @@ class DataLoaderNS3:
     FILE_COL_RSSI = 5;              # linear RSSI
     FILE_COL_MCS = 6;               # the predicted MCS for this transmission from the previous beacon
     
-    def __init__(self, *, data_type=3):
+    def __init__(self, *, data_type=3, debug=False):
         # beacon interval
         self.beacon_interval = 0.5;
         self.next_beacon_interval_from_this_beacon_start = 3*self.beacon_interval;
@@ -23,7 +23,8 @@ class DataLoaderNS3:
                                 [str(item).rjust(5, '0') for item in np.arange(65, 96)],
                                 [str(item).rjust(5, '0') for item in np.arange(129, 160)],
                                 [str(item).rjust(5, '0') for item in np.arange(193, 224)]], axis=-1);
-        # self.staids = np.array(['00001', '00002']);
+        if debug:
+            self.staids = np.array(['00001', '00002']);
         # config - filenames for human, vehicle, uav
         filename_human = ["NNData_STA128_C00_rec_human_3",
                           "NNData_STA128_C00_rec_human_4",
@@ -36,16 +37,20 @@ class DataLoaderNS3:
                         "NNData_STA128_C00_rec_uav_4",
                         "NNData_STA128_C00_rec_uav_5"];
         seeds = np.arange(1, 10);
-        # seeds = np.arange(1, 3);
+        if debug:
+            seeds = np.arange(1, 3);
         # config - holding time
-        if data_type == 3:
-            self.get_train_test_files(filename_human, filename_vehicle, filename_uav, seeds);
-        if data_type == 0:
-            self.get_train_test_files(filename_human, None, None, seeds);
-        if data_type == 1:
+        if debug:
             self.get_train_test_files(None, filename_vehicle, None, seeds);
-        if data_type == 2:
-            self.get_train_test_files(None, None, filename_uav, seeds);
+        else:
+            if data_type == 3:
+                self.get_train_test_files(filename_human, filename_vehicle, filename_uav, seeds);
+            if data_type == 0:
+                self.get_train_test_files(filename_human, None, None, seeds);
+            if data_type == 1:
+                self.get_train_test_files(None, filename_vehicle, None, seeds);
+            if data_type == 2:
+                self.get_train_test_files(None, None, filename_uav, seeds);
         
     '''
     get the train and test files

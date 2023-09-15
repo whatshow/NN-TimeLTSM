@@ -26,11 +26,11 @@ lstm_layer_neuron_num = 128;
 lstm_in_feature_num = 1;
 learning_rate = 0.005;
 
-# USE GPU if available
+# use GPU if available
 device = torch.device('cpu');
 # the folder
 folder = "./_build/uav/";
-path_folder ="./_dist/vehicle/";
+path_folder ="./_dist/uav/";
 if not os.path.exists(folder):
     os.makedirs(folder);
 if not os.path.exists(path_folder):
@@ -103,9 +103,10 @@ for file_id in range(len(data_test_y)):
     plt.savefig(path_folder + titles[file_id] + '.jpg');
     
     print(titles[file_id]);
-    print("Loss-AG.LSTM: %.4f"%(sum((RNN_LSTMAGV1_pred[file_id] - data_test_y[file_id])**2)));
-    print("Loss-AG.LSTM.CM: %.4f"%(sum((RNN_LSTMAGV2_pred[file_id] - data_test_y[file_id])**2)));
-    print("Loss-T1.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME1_CM_pred[file_id] - data_test_y[file_id])**2)));
-    print("Loss-T2.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME2_CM_pred[file_id] - data_test_y[file_id])**2)));
-    print("Loss-T3.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME3_CM_pred[file_id] - data_test_y[file_id])**2)));
+    data_len = len(data_test_y[file_id]);
+    print("Loss-AG.LSTM: %.4f"%(sum((RNN_LSTMAGV1_pred[file_id] - data_test_y[file_id])**2)/data_len));
+    print("Loss-AG.LSTM.CM: %.4f"%(sum((RNN_LSTMAGV2_pred[file_id] - data_test_y[file_id])**2)/data_len));
+    print("Loss-T1.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME1_CM_pred[file_id] - data_test_y[file_id])**2)/data_len));
+    print("Loss-T2.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME2_CM_pred[file_id] - data_test_y[file_id])**2)/data_len));
+    print("Loss-T3.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME3_CM_pred[file_id] - data_test_y[file_id])**2)/data_len));
 
