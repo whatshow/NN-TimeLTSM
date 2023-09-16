@@ -20,7 +20,7 @@ from rnn_lstm_time3_cm import RNN_LSTM_TIME3_CM
 
 # config
 # config - nn
-epoch_iter = 300;               # we train 300 times at most 
+epoch_iter = 20;               # we train 300 times at most 
 time_step = 12;
 lstm_layer_neuron_num = 128;
 lstm_in_feature_num = 1;
