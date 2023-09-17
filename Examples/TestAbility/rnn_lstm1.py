@@ -75,7 +75,7 @@ class RNN_LSTM1:
                         y = torch.from_numpy(data_train_y[idx_file][idx_beacon]).to(device);
                         y_nonzero_ids = torch.where(y != 0);
                         out_tmp, (pred_h, pred_cm) = model.forward(x);
-                        pred_h = pred_h[1, :, :];
+                        pred_h = pred_h[0, :, :];
                         dnn1_out = model_dnn1(pred_h);
                         dnn2_out = model_dnn2(dnn1_out);
                         # calculate the loss
@@ -129,7 +129,7 @@ class RNN_LSTM1:
                     x = torch.from_numpy(x_all[:, :, 0:1]).to(device);
                     t = torch.from_numpy(x_all[:, :, 1:2]).to(device);
                     out_tmp, (pred_h, pred_cm) = model.forward(x);
-                    pred_h = pred_h[1, :, :];
+                    pred_h = pred_h[0, :, :];
                     dnn1_out = model_dnn1(pred_h);
                     dnn2_out = model_dnn2(dnn1_out);
                     # attach batched data into beacon
