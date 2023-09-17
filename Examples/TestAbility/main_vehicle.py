@@ -37,7 +37,7 @@ if not os.path.exists(path_folder):
     os.makedirs(path_folder);
 
 # load data
-dl = DataLoader(data_type=1, debug=True);
+dl = DataLoader(data_type=1);
 data_train_x, data_train_y, data_test_x, data_test_y = dl(time_step);
 
 # scale data
