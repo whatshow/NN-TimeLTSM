@@ -38,9 +38,7 @@ class DataLoaderNS3:
                         # "NNData_STA128_C00_rec_uav_4",
                         # "NNData_STA128_C00_rec_uav_5"
                         ];
-        seeds = np.arange(1, 10);
-        if debug:
-            seeds = np.arange(1, 3);
+        seeds = np.arange(1, 11);
         # config - holding time
         if debug:
             self.get_train_test_files(None, filename_vehicle, None, seeds);
@@ -59,21 +57,28 @@ class DataLoaderNS3:
     '''
     def get_train_test_files(self, filename_human, filename_vehicle, filename_uav, seeds):
         # create folder paths
+        seed_str_len = 10;
         folderpaths_human = [];
         if filename_human is not None:
             for foldername in filename_human:
                 for seed in seeds:
-                    folderpaths_human.append("../../../NN-TimeLTSM-Data/" + foldername + "/log/seed_000000000" + str(seed) + "/ap_rec/");
+                    seed = str(seed);
+                    seed = seed.zfill(seed_str_len);
+                    folderpaths_human.append("../../../NN-TimeLTSM-Data/" + foldername + "/log/seed_" + seed + "/ap_rec/");
         folderpaths_vehicle = [];
         if filename_vehicle is not None:
             for foldername in filename_vehicle:
                 for seed in seeds:
-                    folderpaths_vehicle.append("../../../NN-TimeLTSM-Data/" + foldername + "/log/seed_000000000" + str(seed) + "/ap_rec/");
+                    seed = str(seed);
+                    seed = seed.zfill(seed_str_len);
+                    folderpaths_vehicle.append("../../../NN-TimeLTSM-Data/" + foldername + "/log/seed_" + seed + "/ap_rec/");
         folderpaths_uav = [];
         if filename_uav is not None:
             for foldername in filename_uav:
                 for seed in seeds:
-                    folderpaths_uav.append("../../../NN-TimeLTSM-Data/" + foldername + "/log/seed_000000000" + str(seed) + "/ap_rec/");
+                    seed = str(seed);
+                    seed = seed.zfill(seed_str_len);
+                    folderpaths_uav.append("../../../NN-TimeLTSM-Data/" + foldername + "/log/seed_" + seed + "/ap_rec/");
         # select one to test
         if filename_human is not None:
             test_file_id_human = int(np.random.choice(len(folderpaths_human), 1));

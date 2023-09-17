@@ -20,11 +20,11 @@ from rnn_lstm_time3_cm import RNN_LSTM_TIME3_CM
 
 # config
 # config - nn
-epoch_iter = 20;               # we train 300 times at most 
-time_step = 12;
+epoch_iter = 300;               # we train 300 times at most 
+time_step = 20;
 lstm_layer_neuron_num = 128;
 lstm_in_feature_num = 1;
-learning_rate = 0.005;
+learning_rate = 0.0005;
 
 # USE GPU if available
 device = torch.device('cpu');
@@ -37,7 +37,7 @@ if not os.path.exists(path_folder):
     os.makedirs(path_folder);
 
 # load data
-dl = DataLoader(data_type=1);
+dl = DataLoader(data_type=1, debug=True);
 data_train_x, data_train_y, data_test_x, data_test_y = dl(time_step);
 
 # scale data
@@ -68,45 +68,57 @@ RNN_LSTM_TIME2_CM_pred = zss.inverse_transform(RNN_LSTM_TIME2_CM_pred);
 RNN_LSTM_TIME3_CM_pred = zss.inverse_transform(RNN_LSTM_TIME3_CM_pred);
 
 # to linear
-sta_id = 0;
-for file_id in range(len(data_test_y)):
-    data_test_y[file_id] = data_test_y[file_id][:, sta_id, 0];
-    RNN_LSTMAGV1_pred[file_id] = RNN_LSTMAGV1_pred[file_id][:, sta_id, 0];
-    RNN_LSTMAGV2_pred[file_id] = RNN_LSTMAGV2_pred[file_id][:, sta_id, 0];
-    RNN_LSTM_TIME1_CM_pred[file_id] = RNN_LSTM_TIME1_CM_pred[file_id][:, sta_id, 0];
-    RNN_LSTM_TIME2_CM_pred[file_id] = RNN_LSTM_TIME2_CM_pred[file_id][:, sta_id, 0];
-    RNN_LSTM_TIME3_CM_pred[file_id] = RNN_LSTM_TIME3_CM_pred[file_id][:, sta_id, 0];
+loss_ag = [];
+loss_ag_cm = [];
+loss_t1_cm = [];
+loss_t2_cm = [];
+loss_t3_cm = [];
 
-# plot
-titles = ['vehicle'];
-for file_id in range(len(data_test_y)):
-    plt.figure(figsize=(15, 6), dpi=200)
-    legend_labels = [];
-    plt.plot(range(len(data_test_y[file_id])), data_test_y[file_id]);
-    legend_labels.append('Actual');
-    plt.plot(range(len(RNN_LSTMAGV1_pred[file_id])), RNN_LSTMAGV1_pred[file_id]);
-    legend_labels.append('LSTM (Alex Graves)');
-    plt.plot(range(len(RNN_LSTMAGV2_pred[file_id])), RNN_LSTMAGV2_pred[file_id]);
-    legend_labels.append('LSTM (Alex Graves - Cell Memory)');
-    plt.plot(range(len(RNN_LSTM_TIME1_CM_pred[file_id])), RNN_LSTM_TIME1_CM_pred[file_id]);
-    legend_labels.append('LSTM (Time Gate 1 - Cell Memory)');
-    plt.plot(range(len(RNN_LSTM_TIME2_CM_pred[file_id])), RNN_LSTM_TIME2_CM_pred[file_id]);
-    legend_labels.append('LSTM (Time Gate 2 - Cell Memory)');
-    plt.plot(range(len(RNN_LSTM_TIME3_CM_pred[file_id])), RNN_LSTM_TIME3_CM_pred[file_id]);
-    legend_labels.append('LSTM (Time Gate 3 - Cell Memory)');
-    # show config
-    plt.legend(legend_labels);
-    plt.xlabel('Time');
-    plt.ylabel('Rx Signal Power(dBm)')
-    plt.title(titles[file_id]);
-    plt.grid();
-    plt.savefig(path_folder + titles[file_id] + '.jpg');
+for sta_id in range(data_test_y[0].shape[1]):
+    for file_id in range(len(data_test_y)):
+        d0 = data_test_y[file_id][:, sta_id, 0];
+        d1 = RNN_LSTMAGV1_pred[file_id][:, sta_id, 0];
+        d2 = RNN_LSTMAGV2_pred[file_id][:, sta_id, 0];
+        d3 = RNN_LSTM_TIME1_CM_pred[file_id][:, sta_id, 0];
+        d4 = RNN_LSTM_TIME2_CM_pred[file_id][:, sta_id, 0];
+        d5 = RNN_LSTM_TIME3_CM_pred[file_id][:, sta_id, 0];
     
-    print(titles[file_id]);
-    data_len = len(data_test_y[file_id]);
-    print("Loss-AG.LSTM: %.4f"%(sum((RNN_LSTMAGV1_pred[file_id] - data_test_y[file_id])**2)/data_len));
-    print("Loss-AG.LSTM.CM: %.4f"%(sum((RNN_LSTMAGV2_pred[file_id] - data_test_y[file_id])**2)/data_len));
-    print("Loss-T1.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME1_CM_pred[file_id] - data_test_y[file_id])**2)/data_len));
-    print("Loss-T2.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME2_CM_pred[file_id] - data_test_y[file_id])**2)/data_len));
-    print("Loss-T3.LSTM.CM: %.4f"%(sum((RNN_LSTM_TIME3_CM_pred[file_id] - data_test_y[file_id])**2)/data_len));
-
+    # plot
+    titles = ['vehicle'];
+    for file_id in range(len(data_test_y)):
+        plt.figure(figsize=(15, 6), dpi=200)
+        legend_labels = [];
+        plt.plot(range(len(d0)), d0);
+        legend_labels.append('Actual');
+        plt.plot(range(len(d1)), d1);
+        legend_labels.append('LSTM (Alex Graves)');
+        plt.plot(range(len(d2)), d2);
+        legend_labels.append('LSTM (Alex Graves - Cell Memory)');
+        plt.plot(range(len(d3)), d3);
+        legend_labels.append('LSTM (Time Gate 1 - Cell Memory)');
+        plt.plot(range(len(d4)), d4);
+        legend_labels.append('LSTM (Time Gate 2 - Cell Memory)');
+        plt.plot(range(len(d5)), d5);
+        legend_labels.append('LSTM (Time Gate 3 - Cell Memory)');
+        # show config
+        plt.legend(legend_labels);
+        plt.xlabel('Time');
+        plt.ylabel('Rx Signal Power(dBm)')
+        plt.title(titles[file_id]);
+        plt.grid();
+        plt.savefig(path_folder + titles[file_id] + "_" + str(sta_id) +  '.jpg');
+        
+        # record the loss
+        data_len = len(d0);
+        loss_ag.append(sum((d1 - d0)**2)/data_len);
+        loss_ag_cm.append(sum((d2 - d0)**2)/data_len);
+        loss_t1_cm.append(sum((d3 - d0)**2)/data_len);
+        loss_t2_cm.append(sum((d4 - d0)**2)/data_len);
+        loss_t3_cm.append(sum((d5 - d0)**2)/data_len);
+        
+        
+print("Loss-AG.LSTM: %.4f"%(np.sqrt(np.mean(loss_ag))));
+print("Loss-AG.LSTM.CM: %.4f"%(np.sqrt(np.mean(loss_ag_cm))));
+print("Loss-T1.LSTM.CM: %.4f"%(np.sqrt(np.mean(loss_t1_cm))));
+print("Loss-T2.LSTM.CM: %.4f"%(np.sqrt(np.mean(loss_t2_cm))));
+print("Loss-T3.LSTM.CM: %.4f"%(np.sqrt(np.mean(loss_t3_cm))));

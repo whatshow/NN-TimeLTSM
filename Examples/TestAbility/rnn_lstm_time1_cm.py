@@ -10,7 +10,7 @@ sys.path.append("../..");
 from TimeLSTM_v3 import TimeLSTM_v3 as TimeLSTM
 
 class RNN_LSTM_TIME1_CM:
-    
+    split_per               = 0.2;
     eps                     = 1e-8;             # minimal loss
     patience                = 30;                # stop when loss stops decrease than 5 epo
     folder = "rnn_lstm_time1_cm/"
@@ -27,6 +27,27 @@ class RNN_LSTM_TIME1_CM:
         self.modelfile_lstm_ag = self.folder + self.modelfile_lstm_ag;
         self.modelfile_dnn1 = self.folder + self.modelfile_dnn1;
         self.modelfile_dnn2 = self.folder + self.modelfile_dnn2;
+        
+        # split into train and validate set
+        train_data_len = len(data_train_x);
+        valid_data_len = int(train_data_len*self.split_per);
+        if valid_data_len <= 0:
+            raise Exception("not enough data for valid");
+        valid_data_ids = np.random.choice(train_data_len, valid_data_len);
+        valid_data_ids = valid_data_ids.tolist();
+        train_data_x = [];
+        train_data_y = [];
+        valid_data_x = [];
+        valid_data_y = [];
+        for idx in range(train_data_len):
+            if idx in valid_data_ids:
+                valid_data_x.append(data_train_x[idx]);
+                valid_data_y.append(data_train_y[idx]);
+            else:
+                train_data_x.append(data_train_x[idx]);
+                train_data_y.append(data_train_y[idx]);
+        data_train_x = train_data_x;
+        data_train_y = train_data_y;
         
         # build the model
         model = TimeLSTM(TimeLSTM.NN_INIT_TYPE_RANDN, lstm_in_feature_num, lstm_layer_neuron_num, nn_type=TimeLSTM.NN_TYPE_LSTM_TIME1);
@@ -97,24 +118,60 @@ class RNN_LSTM_TIME1_CM:
                         pred_cm = pred_cm.detach();
                 # calulate the average loss
                 loss_aver = loss_total/loss_total_trials;
-                # adjust the learning rate for each epo
-                lr_optimizer.step(loss_aver);
                 #show the progress
                 print("    - epo %d/%d: the loss is %.6f"%(epo_id+1, epoch_iter, loss_aver));
-                # if the loss is bigger than the past, we pass a patience
-                if loss_aver - loss_total_prev >= self.eps:
-                    patience_past = patience_past + 1;
-                else:
-                    patience_past = 0;
-                # repord the previous loss
-                loss_total_prev = loss_aver;
-                # stop when patience reaches the most
-                if patience_past >= self.patience:
-                    print("    - stop because the loss stops decreasing for %d epos"%patience_past);
-                    break;
-                # stop when loss reaches the minimal
-                if loss_total_prev <= self.eps:
-                    print("    - stop because the loss has reached its minimal"%patience_past);
+                
+                # valid
+                if (epo_id+1)%5 == 0: 
+                    model.eval();
+                    model_dnn1.eval();
+                    model_dnn2.eval();
+                    loss_total = 0.0;
+                    loss_total_trials = 0;
+                    filelen = len(valid_data_x);
+                    for idx_file in range(filelen):
+                        pred_cm = None;
+                        beacon_len = len(valid_data_x[idx_file]);
+                        for idx_beacon in range(beacon_len):
+                            x_all = valid_data_x[idx_file][idx_beacon];
+                            x = torch.from_numpy(x_all[:, :, 0:1]).to(device);
+                            t = torch.from_numpy(x_all[:, :, 1:2]).to(device);
+                            y = torch.from_numpy(valid_data_y[idx_file][idx_beacon]).to(device);
+                            y_nonzero_ids = torch.where(y != 0);
+                            pred_h, pred_cm = model.forward(x, cm=pred_cm, t=t);
+                            dnn_in = torch.squeeze(pred_h, -1);
+                            dnn1_out = model_dnn1_act(model_dnn1(dnn_in));
+                            dnn2_out = model_dnn2(dnn1_out);
+                            # calculate the loss
+                            loss = criterion(dnn2_out, y);
+                            # only count on the loss with non zeros in y
+                            loss = torch.mean(loss[y_nonzero_ids]);
+                            # append the loss to the total loss
+                            loss_total = loss_total + loss;
+                            loss_total_trials = loss_total_trials + 1;
+                            # detach pred_cm
+                            pred_cm = pred_cm.detach();
+                    # calulate the average loss
+                    loss_aver = loss_total/loss_total_trials;
+                    # adjust the learning rate for each epo
+                    lr_optimizer.step(loss_aver);
+                    #show the progress
+                    print("      - valid: the loss is %.6f"%loss_aver);
+                    model.train();
+                    model_dnn1.train();
+                    model_dnn2.train();
+                    # if the loss is bigger than the past, we pass a patience
+                    if loss_aver - loss_total_prev >= self.eps:
+                        patience_past = patience_past + 1;
+                    # repord the previous loss
+                    loss_total_prev = loss_aver;
+                    # stop when patience reaches the most
+                    if patience_past >= self.patience:
+                        print("    - stop because the loss stops decreasing for %d epos"%patience_past);
+                        break;
+                    # stop when loss reaches the minimal
+                    if loss_total_prev <= self.eps:
+                        print("    - stop because the loss has reached its minimal"%patience_past);
             # save the model
             torch.save(model.state_dict(), self.modelfile_lstm_ag);
             torch.save(model_dnn1.state_dict(), self.modelfile_dnn1);
