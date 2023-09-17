@@ -30,9 +30,9 @@ class DataLoaderNS3:
                           # "NNData_STA128_C00_rec_human_4",
                           # "NNData_STA128_C00_rec_human_5",
                           ];
-        filename_vehicle = ["NNData_STA128_C00_rec_vehicle_3",
+        filename_vehicle = [#"NNData_STA128_C00_rec_vehicle_3",
                             # "NNData_STA128_C00_rec_vehicle_4",
-                            # "NNData_STA128_C00_rec_vehicle_5"
+                            "NNData_STA128_C00_rec_vehicle_5"
                             ];
         filename_uav = ["NNData_STA128_C00_rec_uav_3",
                         # "NNData_STA128_C00_rec_uav_4",
