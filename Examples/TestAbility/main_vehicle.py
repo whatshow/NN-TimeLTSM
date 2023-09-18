@@ -8,7 +8,7 @@ import shutil
 import pandas
 import torch
 from torch import nn
-from data_loader_ns3 import DataLoaderNS3 as DataLoader
+from data_loader_ns3_interval import DataLoaderNS3 as DataLoader
 from Scaler import ZScoreScaler
 from TimeLSTM_v3 import TimeLSTM_v3 as TimeLSTM
 # load test
@@ -59,24 +59,26 @@ rnn2 = RNN_LSTM_AG_CM();
 RNN_LSTMAGV2_pred = rnn2(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
 rnn3 = RNN_LSTM_TIME1_CM();
 RNN_LSTM_TIME1_CM_pred = rnn3(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
-rnn31 = RNN_LSTM_TIME1_CM1();
-RNN_LSTM_TIME1_CM1_pred = rnn31(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
+#rnn31 = RNN_LSTM_TIME1_CM1();
+#RNN_LSTM_TIME1_CM1_pred = rnn31(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
 rnn4 = RNN_LSTM_TIME2_CM();
 RNN_LSTM_TIME2_CM_pred = rnn4(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
-rnn41 = RNN_LSTM_TIME2_CM1();
-RNN_LSTM_TIME2_CM1_pred = rnn41(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
+#rnn41 = RNN_LSTM_TIME2_CM1();
+#RNN_LSTM_TIME2_CM1_pred = rnn41(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
 rnn5 = RNN_LSTM_TIME3_CM();
 RNN_LSTM_TIME3_CM_pred = rnn5(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
-rnn51 = RNN_LSTM_TIME3_CM1();
-RNN_LSTM_TIME3_CM1_pred = rnn51(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
+#rnn51 = RNN_LSTM_TIME3_CM1();
+#RNN_LSTM_TIME3_CM1_pred = rnn51(folder, device, lstm_layer_neuron_num, lstm_in_feature_num, time_step, epoch_iter, learning_rate, data_train_x, data_train_y, data_test_x);
 
 # unscale
 RNN_LSTMAGV1_pred = zss.inverse_transform(RNN_LSTMAGV1_pred);
 RNN_LSTMAGV2_pred = zss.inverse_transform(RNN_LSTMAGV2_pred);
 RNN_LSTM_TIME1_CM_pred = zss.inverse_transform(RNN_LSTM_TIME1_CM_pred);
-RNN_LSTM_TIME1_CM1_pred = zss.inverse_transform(RNN_LSTM_TIME1_CM1_pred);
+#RNN_LSTM_TIME1_CM1_pred = zss.inverse_transform(RNN_LSTM_TIME1_CM1_pred);
 RNN_LSTM_TIME2_CM_pred = zss.inverse_transform(RNN_LSTM_TIME2_CM_pred);
+#RNN_LSTM_TIME2_CM1_pred = zss.inverse_transform(RNN_LSTM_TIME2_CM1_pred);
 RNN_LSTM_TIME3_CM_pred = zss.inverse_transform(RNN_LSTM_TIME3_CM_pred);
+#RNN_LSTM_TIME3_CM1_pred = zss.inverse_transform(RNN_LSTM_TIME3_CM1_pred);
 
 # to linear
 loss_ag = [];
@@ -94,11 +96,11 @@ for sta_id in range(data_test_y[0].shape[1]):
         d1 = RNN_LSTMAGV1_pred[file_id][:, sta_id, 0];
         d2 = RNN_LSTMAGV2_pred[file_id][:, sta_id, 0];
         d3 = RNN_LSTM_TIME1_CM_pred[file_id][:, sta_id, 0];
-        d31 = RNN_LSTM_TIME1_CM1_pred[file_id][:, sta_id, 0];
+        #d31 = RNN_LSTM_TIME1_CM1_pred[file_id][:, sta_id, 0];
         d4 = RNN_LSTM_TIME2_CM_pred[file_id][:, sta_id, 0];
-        d41 = RNN_LSTM_TIME2_CM1_pred[file_id][:, sta_id, 0];
+        #d41 = RNN_LSTM_TIME2_CM1_pred[file_id][:, sta_id, 0];
         d5 = RNN_LSTM_TIME3_CM_pred[file_id][:, sta_id, 0];
-        d51 = RNN_LSTM_TIME3_CM1_pred[file_id][:, sta_id, 0];
+        #d51 = RNN_LSTM_TIME3_CM1_pred[file_id][:, sta_id, 0];
     
     # plot
     titles = ['vehicle'];
@@ -113,16 +115,16 @@ for sta_id in range(data_test_y[0].shape[1]):
         legend_labels.append('LSTM (Alex Graves - Cell Memory)');
         plt.plot(range(len(d3)), d3);
         legend_labels.append('LSTM (Time Gate 1 - Cell Memory)');
-        plt.plot(range(len(d31)), d31);
-        legend_labels.append('LSTM (Time Gate 1 - Cell Memory, no act)');
+        # plt.plot(range(len(d31)), d31);
+        # legend_labels.append('LSTM (Time Gate 1 - Cell Memory, no act)');
         plt.plot(range(len(d4)), d4);
         legend_labels.append('LSTM (Time Gate 2 - Cell Memory)');
-        plt.plot(range(len(d41)), d41);
-        legend_labels.append('LSTM (Time Gate 2 - Cell Memory, no act)');
+        # plt.plot(range(len(d41)), d41);
+        # legend_labels.append('LSTM (Time Gate 2 - Cell Memory, no act)');
         plt.plot(range(len(d5)), d5);
         legend_labels.append('LSTM (Time Gate 3 - Cell Memory)');
-        plt.plot(range(len(d51)), d51);
-        legend_labels.append('LSTM (Time Gate 3 - Cell Memory, no act)');
+        # plt.plot(range(len(d51)), d51);
+        # legend_labels.append('LSTM (Time Gate 3 - Cell Memory, no act)');
         # show config
         plt.legend(legend_labels);
         plt.xlabel('Time');
@@ -136,18 +138,18 @@ for sta_id in range(data_test_y[0].shape[1]):
         loss_ag.append(sum((d1 - d0)**2)/data_len);
         loss_ag_cm.append(sum((d2 - d0)**2)/data_len);
         loss_t1_cm.append(sum((d3 - d0)**2)/data_len);
-        loss_t1_cm1.append(sum((d31 - d0)**2)/data_len);
+        # loss_t1_cm1.append(sum((d31 - d0)**2)/data_len);
         loss_t2_cm.append(sum((d4 - d0)**2)/data_len);
-        loss_t2_cm1.append(sum((d41 - d0)**2)/data_len);
+        # loss_t2_cm1.append(sum((d41 - d0)**2)/data_len);
         loss_t3_cm.append(sum((d5 - d0)**2)/data_len);
-        loss_t3_cm1.append(sum((d51 - d0)**2)/data_len);
+        # loss_t3_cm1.append(sum((d51 - d0)**2)/data_len);
         
         
 print("Loss-AG.LSTM: %.4f"%(np.sqrt(np.mean(loss_ag))));
 print("Loss-AG.LSTM.CM: %.4f"%(np.sqrt(np.mean(loss_ag_cm))));
 print("Loss-T1.LSTM.CM: %.4f"%(np.sqrt(np.mean(loss_t1_cm))));
-print("Loss-T1.LSTM.CM.NoAct: %.4f"%(np.sqrt(np.mean(loss_t1_cm1))));
+# print("Loss-T1.LSTM.CM.NoAct: %.4f"%(np.sqrt(np.mean(loss_t1_cm1))));
 print("Loss-T2.LSTM.CM: %.4f"%(np.sqrt(np.mean(loss_t2_cm))));
-print("Loss-T2.LSTM.CM.NoAct: %.4f"%(np.sqrt(np.mean(loss_t2_cm1))));
+# print("Loss-T2.LSTM.CM.NoAct: %.4f"%(np.sqrt(np.mean(loss_t2_cm1))));
 print("Loss-T3.LSTM.CM: %.4f"%(np.sqrt(np.mean(loss_t3_cm))));
-print("Loss-T3.LSTM.CM.NoAct: %.4f"%(np.sqrt(np.mean(loss_t3_cm1))));
+# print("Loss-T3.LSTM.CM.NoAct: %.4f"%(np.sqrt(np.mean(loss_t3_cm1))));
